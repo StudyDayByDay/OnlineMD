@@ -16,7 +16,7 @@ import MDEditor from '@/components/MDEditor/index.vue';
   </div>
 </template>
 
-<style scoped lang="scss">
+<style scoped lang="less">
 .online-md {
   height: 100%;
   width: 100%;
@@ -32,9 +32,9 @@ import MDEditor from '@/components/MDEditor/index.vue';
     }
   }
   &_content {
-    height: calc(100% - 60px);
+    height: calc(100% - 100px);
     width: 80%;
-    margin: auto;
+    margin: 20px auto;
   }
 }
 </style>

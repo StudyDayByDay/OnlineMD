@@ -3,10 +3,12 @@
   <div class="md-editor">MDEditor</div>
 </template>
 
-<style lang="scss" scoped>
+<style lang="less" scoped>
 .md-editor {
   height: 100%;
   width: 100%;
-  margin-top: 20px;
+  padding: 15px;
+  border: 2px solid #ccc;
+  border-radius: 5px;
 }
 </style>

@@ -364,3 +364,11 @@ template {
 [hidden] {
   display: none;
 }
+
+a {
+  color: inherit; /* 继承父元素的文本颜色 */
+  text-decoration: none; /* 去除下划线 */
+  background-color: transparent; /* 去除背景色 */
+  outline: none; /* 去除点击时的轮廓 */
+  cursor: pointer; /* 鼠标悬停时显示手型 */
+}
