@@ -5,8 +5,8 @@ import github from '@/assets/images/github.svg';
 <template>
   <div class="md-header">
     <a class="left" href="#">
-      <img :src="markdown" alt="在线markdown编辑器" />
-      <strong>onlineMD - 在线 markdown 编辑器</strong>
+      <img :src="markdown" alt="在线Markdown编辑器" />
+      <strong>onlineMD - 在线 Markdown 编辑器</strong>
     </a>
     <div class="flex-item-1"></div>
     <div class="right">

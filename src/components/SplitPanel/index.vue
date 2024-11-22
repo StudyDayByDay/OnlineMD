@@ -86,20 +86,18 @@ onMounted(() => {
   width: 100%;
   height: 100%; /* 占满整个视口高度 */
   overflow: hidden;
-  user-select: none; /* 禁止选中文字 */
 }
 
 /* 面板样式 */
 .panel {
   overflow: auto;
-  padding: 20px;
   box-sizing: border-box;
 }
 
 /* 拖拽条基础样式 */
 .resizer {
-  width: 2px;
-  background-color: #ccc;
+  width: 1px;
+  background-color: #dcdcdc;
   cursor: col-resize; /* 鼠标指针变为左右拖拽 */
   position: relative;
   z-index: 1;
