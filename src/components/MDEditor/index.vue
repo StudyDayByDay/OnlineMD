@@ -2,13 +2,22 @@
 import SplitPanel from '@/components/SplitPanel/index.vue';
 import CodePanel from '@/components/CodePanel/index.vue';
 import ViewPanel from '@/components/ViewPanel/index.vue';
-import {reactive} from 'vue';
+import {reactive, ref} from 'vue';
 import {UploadOutlined, QuestionCircleOutlined, EyeOutlined, CloseCircleOutlined, VerticalAlignBottomOutlined} from '@ant-design/icons-vue';
 
-const handleUploadFile = () => {};
-const handleQuestion = () => {};
+const handleUploadFile = () => {
+  invisibleInputRef.value?.click();
+};
+const handleFile = (e: Event) => {
+  console.log((e.target as HTMLInputElement).files);
+};
+const handleQuestion = () => {
+  grammarTip.value = true;
+};
 const handleClose = () => {};
-const handlePreview = () => {};
+const handlePreview = () => {
+  previewModal.value = true;
+};
 const handleExport = () => {};
 
 const images = [
@@ -39,8 +48,12 @@ const images = [
   },
 ];
 
-const frontImages = reactive(images.slice(0, 3));
-const backImages = reactive(images.slice(3));
+const frontImages = reactive(images.slice(0, 4));
+const backImages = reactive(images[4]);
+
+const grammarTip = ref(false);
+const previewModal = ref(false);
+const invisibleInputRef = ref<HTMLInputElement | null>(null);
 </script>
 <template>
   <div class="md-editor">
@@ -50,9 +63,15 @@ const backImages = reactive(images.slice(3));
         <component :is="item.image" @click="item.handleFunc" class="icon" />
       </a-tooltip>
       <div class="line"></div>
-      <a-tooltip v-for="item in backImages" :key="item.image" :title="item.tip" placement="top">
-        <component :is="item.image" @click="item.handleFunc" class="icon" />
-      </a-tooltip>
+      <a-dropdown placement="bottom" :arrow="{pointAtCenter: true}">
+        <component :is="backImages.image" class="icon" />
+        <template #overlay>
+          <a-menu>
+            <a-menu-item> 导出为PDF </a-menu-item>
+            <a-menu-item> 导出为图片 </a-menu-item>
+          </a-menu>
+        </template>
+      </a-dropdown>
     </div>
     <split-panel class="editor-panel">
       <template #left>
@@ -62,6 +81,17 @@ const backImages = reactive(images.slice(3));
         <view-panel />
       </template>
     </split-panel>
+    <a-drawer title="Markdown语法规则" placement="right" :closable="false" :open="grammarTip" @close="grammarTip = false">
+      <p>Some contents...</p>
+      <p>Some contents...</p>
+      <p>Some contents...</p>
+    </a-drawer>
+    <a-modal v-model:open="previewModal" title="Markdown预览" width="800px" ok-text="确认" cancel-text="取消" @ok="previewModal = false">
+      <p>Some contents...</p>
+      <p>Some contents...</p>
+      <p>Some contents...</p>
+    </a-modal>
+    <input ref="invisibleInputRef" type="file" style="display: none" accept=".md" @change="handleFile" />
   </div>
 </template>
 
