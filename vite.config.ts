@@ -25,4 +25,17 @@ export default defineConfig({
       ],
     }),
   ],
+  optimizeDeps: {
+    include: ['monaco-editor'], // 确保 Monaco 被预打包
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // 把 monaco-editor 分包
+          monaco: ['monaco-editor'],
+        },
+      },
+    },
+  },
 });

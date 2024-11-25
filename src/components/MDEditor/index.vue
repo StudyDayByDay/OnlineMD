@@ -54,6 +54,8 @@ const backImages = reactive(images[4]);
 const grammarTip = ref(false);
 const previewModal = ref(false);
 const invisibleInputRef = ref<HTMLInputElement | null>(null);
+
+const fileCode = ref('');
 </script>
 <template>
   <div class="md-editor">
@@ -75,10 +77,10 @@ const invisibleInputRef = ref<HTMLInputElement | null>(null);
     </div>
     <split-panel class="editor-panel">
       <template #left>
-        <code-panel />
+        <code-panel v-model:code="fileCode" />
       </template>
       <template #right>
-        <view-panel />
+        <view-panel :code="fileCode" />
       </template>
     </split-panel>
     <a-drawer title="Markdown语法规则" placement="right" :closable="false" :open="grammarTip" @close="grammarTip = false">
