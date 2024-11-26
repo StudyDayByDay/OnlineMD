@@ -55,6 +55,32 @@ const grammarTip = ref(false);
 const previewModal = ref(false);
 const invisibleInputRef = ref<HTMLInputElement | null>(null);
 
+const codeRef = ref<InstanceType<typeof CodePanel> | null>(null);
+
+const viewRef = ref<InstanceType<typeof ViewPanel> | null>(null);
+
+// 同步滚动标志，防止循环触发
+const isSyncing = ref(false);
+// 同步滚动事件
+// 同步滚动事件
+const syncScroll = (source: 'code' | 'view') => {
+  if (isSyncing.value) return; // 如果是同步操作，跳过
+
+  isSyncing.value = true; // 设置同步标志
+
+  if (source === 'code') {
+    // 从 code-panel 同步到 view-panel
+    const scrollTop = codeRef.value?.getScrollTop();
+    viewRef.value?.setScrollTop(scrollTop as number);
+  } else if (source === 'view') {
+    // 从 view-panel 同步到 code-panel
+    const scrollTop = viewRef.value?.getScrollTop();
+    codeRef.value?.setScrollTop(scrollTop as number);
+  }
+
+  setTimeout(() => (isSyncing.value = false), 0); // 短时间后重置同步标志
+};
+
 const fileCode = ref('');
 </script>
 <template>
@@ -77,10 +103,10 @@ const fileCode = ref('');
     </div>
     <split-panel class="editor-panel">
       <template #left>
-        <code-panel v-model:code="fileCode" />
+        <code-panel v-model:code="fileCode" ref="codeRef" @scroll="syncScroll('code')" />
       </template>
       <template #right>
-        <view-panel :code="fileCode" />
+        <view-panel :code="fileCode" ref="viewRef" @scroll="syncScroll('view')" />
       </template>
     </split-panel>
     <a-drawer title="Markdown语法规则" placement="right" :closable="false" :open="grammarTip" @close="grammarTip = false">

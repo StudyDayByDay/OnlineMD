@@ -90,7 +90,6 @@ onMounted(() => {
 
 /* 面板样式 */
 .panel {
-  overflow: auto;
   box-sizing: border-box;
 }
 

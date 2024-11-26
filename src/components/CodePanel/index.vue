@@ -10,7 +10,9 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['update:code']);
+const emit = defineEmits(['update:code', 'scroll']);
+
+const isSyncing = ref(false); // 防止循环触发
 
 const editorContainer = ref<HTMLDivElement | null>(null);
 let editorInstance: monaco.editor.IStandaloneCodeEditor | null = null;
@@ -31,11 +33,32 @@ const initEditor = () => {
     const value = editorInstance?.getValue() || '';
     emit('update:code', value); // 将变化同步到父组件
   });
+
+  // 监听滚动事件
+  editorInstance.onDidScrollChange(() => {
+    if (isSyncing.value) return; // 如果是同步操作，跳过
+    const scrollTop = editorInstance?.getScrollTop();
+    emit('scroll', scrollTop); // 向父组件传递滚动位置
+  });
 };
 
 // 销毁编辑器实例
 const destroyEditor = () => {
   editorInstance?.dispose();
+};
+
+// 暴露方法：获取当前滚动位置
+const getScrollTop = () => {
+  return editorInstance?.getScrollTop() || 0;
+};
+
+// 暴露方法：设置滚动位置
+const setScrollTop = (scrollTop: number) => {
+  if (editorInstance) {
+    isSyncing.value = true; // 设置同步标志
+    editorInstance.setScrollTop(scrollTop);
+    setTimeout(() => (isSyncing.value = false), 0); // 短时间后重置同步标志
+  }
 };
 
 onMounted(() => {
@@ -44,6 +67,11 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   destroyEditor();
+});
+
+defineExpose({
+  getScrollTop,
+  setScrollTop,
 });
 </script>
 
