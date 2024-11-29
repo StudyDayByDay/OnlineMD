@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import SplitPanel from '@/components/SplitPanel/index.vue';
-import CodePanel from '@/components/CodePanel/index.vue';
-import ViewPanel from '@/components/ViewPanel/index.vue';
-import {reactive, ref} from 'vue';
+import {reactive, ref, computed, onMounted, onBeforeUnmount, nextTick} from 'vue';
 import {UploadOutlined, QuestionCircleOutlined, EyeOutlined, CloseCircleOutlined, VerticalAlignBottomOutlined} from '@ant-design/icons-vue';
+import * as monaco from 'monaco-editor';
+import {Marked} from 'marked';
+import {markedHighlight} from 'marked-highlight';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/atom-one-light.css';
 
 const handleUploadFile = () => {
   invisibleInputRef.value?.click();
@@ -55,33 +58,93 @@ const grammarTip = ref(false);
 const previewModal = ref(false);
 const invisibleInputRef = ref<HTMLInputElement | null>(null);
 
-const codeRef = ref<InstanceType<typeof CodePanel> | null>(null);
-
-const viewRef = ref<InstanceType<typeof ViewPanel> | null>(null);
-
 // 同步滚动标志，防止循环触发
-const isSyncing = ref(false);
-// 同步滚动事件
-// 同步滚动事件
-const syncScroll = (source: 'code' | 'view') => {
-  if (isSyncing.value) return; // 如果是同步操作，跳过
+let isSyncing = false;
+const fileCode = ref('');
 
-  isSyncing.value = true; // 设置同步标志
+const codeRef = ref<HTMLDivElement | null>(null);
+let editorInstance: monaco.editor.IStandaloneCodeEditor | null = null;
+// 初始化编辑器
+const initEditor = () => {
+  if (!codeRef.value) return;
 
-  if (source === 'code') {
-    // 从 code-panel 同步到 view-panel
-    const scrollTop = codeRef.value?.getScrollTop();
-    viewRef.value?.setScrollTop(scrollTop as number);
-  } else if (source === 'view') {
-    // 从 view-panel 同步到 code-panel
-    const scrollTop = viewRef.value?.getScrollTop();
-    codeRef.value?.setScrollTop(scrollTop as number);
-  }
+  editorInstance = monaco.editor.create(codeRef.value, {
+    value: fileCode.value,
+    language: 'markdown',
+    theme: 'vs',
+    automaticLayout: true, // 自动布局
+  });
 
-  setTimeout(() => (isSyncing.value = false), 0); // 短时间后重置同步标志
+  // 监听代码变化事件
+  editorInstance.onDidChangeModelContent(() => {
+    const value = editorInstance?.getValue() || '';
+    fileCode.value = value;
+  });
+
+  // 监听滚动事件
+  editorInstance.onDidScrollChange(() => {
+    if (isSyncing) return;
+    isSyncing = true;
+    if (editorInstance && viewRef.value) {
+      const scrollTop = editorInstance?.getScrollTop();
+      const scrollHeight = editorInstance?.getScrollHeight();
+      const clientHeight = editorInstance?.getDomNode()?.clientHeight || 1; // 可视区域高度
+      const scrollPercentage = scrollTop / (scrollHeight - clientHeight); // 计算滚动百分比
+      viewRef.value.scrollTop = scrollPercentage * (viewRef.value.scrollHeight - viewRef.value.clientHeight);
+    }
+    isSyncing = false;
+  });
 };
 
-const fileCode = ref('');
+// 销毁编辑器实例
+const destroyEditor = () => {
+  editorInstance?.dispose();
+};
+
+const viewRef = ref<HTMLDivElement | null>(null);
+const marked = new Marked(
+  markedHighlight({
+    emptyLangClass: 'hljs',
+    langPrefix: 'hljs language-',
+    highlight(code, lang, info) {
+      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+      return hljs.highlight(code, {language}).value;
+    },
+  })
+);
+
+const renderedMarkdown = computed(() => {
+  return marked.parse(fileCode.value);
+});
+
+const onScroll = () => {
+  if (isSyncing) return;
+
+  isSyncing = true; // 设置同步标志
+
+  if (editorInstance && viewRef.value) {
+    const scrollTop = viewRef.value.scrollTop;
+    const scrollHeight = viewRef.value.scrollHeight;
+    const clientHeight = viewRef.value.clientHeight;
+
+    const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
+    const editorScrollHeight = editorInstance.getScrollHeight();
+    const editorClientHeight = editorInstance.getDomNode()?.clientHeight || 1;
+
+    editorInstance.setScrollTop(scrollPercentage * (editorScrollHeight - editorClientHeight));
+  }
+  isSyncing = false; // 恢复同步标志
+};
+
+onMounted(() => {
+  initEditor();
+  viewRef.value?.addEventListener('scroll', onScroll);
+});
+
+onBeforeUnmount(() => {
+  destroyEditor();
+  viewRef.value?.removeEventListener('scroll', onScroll);
+});
 </script>
 <template>
   <div class="md-editor">
@@ -103,10 +166,10 @@ const fileCode = ref('');
     </div>
     <split-panel class="editor-panel">
       <template #left>
-        <code-panel v-model:code="fileCode" ref="codeRef" @scroll="syncScroll('code')" />
+        <div class="code-panel" ref="codeRef"></div>
       </template>
       <template #right>
-        <view-panel :code="fileCode" ref="viewRef" @scroll="syncScroll('view')" />
+        <div class="view-panel markdown-body" ref="viewRef" v-html="renderedMarkdown"></div>
       </template>
     </split-panel>
     <a-drawer title="Markdown语法规则" placement="right" :closable="false" :open="grammarTip" @close="grammarTip = false">
@@ -124,6 +187,7 @@ const fileCode = ref('');
 </template>
 
 <style lang="less" scoped>
+@import 'github-markdown-css';
 .md-editor {
   height: 100%;
   width: 100%;
@@ -155,5 +219,24 @@ const fileCode = ref('');
   .editor-panel {
     height: calc(100% - 40px);
   }
+}
+
+.markdown-body {
+  background-color: #ffffff !important; /* 强制固定为白色背景 */
+  color: #000000; /* 确保文字颜色适配白色背景 */
+}
+
+.code-panel {
+  width: 100%;
+  height: 100%;
+  will-change: scroll-position;
+}
+.view-panel {
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  will-change: scroll-position;
+  overflow: auto;
+  transform: translateZ(10px);
 }
 </style>

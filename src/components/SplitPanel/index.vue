@@ -1,20 +1,3 @@
-<template>
-  <div class="split-container" ref="splitContainer">
-    <!-- 左侧面板 -->
-    <div class="panel left-panel" :style="{width: leftPanelWidth + 'px'}">
-      <slot name="left" />
-    </div>
-
-    <!-- 拖拽条 -->
-    <div class="resizer" :class="{active: isResizing, hover: isHovering}" @mousedown="startResizing" @mouseenter="isHovering = true" @mouseleave="isHovering = false"></div>
-
-    <!-- 右侧面板 -->
-    <div class="panel right-panel" :style="{width: `calc(100% - ${leftPanelWidth}px)`}">
-      <slot name="right" />
-    </div>
-  </div>
-</template>
-
 <script lang="ts" setup>
 import {ref, onMounted} from 'vue';
 
@@ -78,6 +61,23 @@ onMounted(() => {
   initializeWidths();
 });
 </script>
+
+<template>
+  <div class="split-container" ref="splitContainer">
+    <!-- 左侧面板 -->
+    <div class="panel left-panel" :style="{width: leftPanelWidth + 'px'}">
+      <slot name="left" />
+    </div>
+
+    <!-- 拖拽条 -->
+    <div class="resizer" :class="{active: isResizing, hover: isHovering}" @mousedown="startResizing" @mouseenter="isHovering = true" @mouseleave="isHovering = false"></div>
+
+    <!-- 右侧面板 -->
+    <div class="panel right-panel" :style="{width: `calc(100% - ${leftPanelWidth}px)`}">
+      <slot name="right" />
+    </div>
+  </div>
+</template>
 
 <style scoped>
 /* 分屏容器 */
