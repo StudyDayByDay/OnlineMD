@@ -58,7 +58,92 @@ const grammarTip = ref(false);
 const previewModal = ref(false);
 const invisibleInputRef = ref<HTMLInputElement | null>(null);
 
+// 同步滚动标志，防止循环触发
+let isSyncing = false;
 const fileCode = ref('');
+
+const codeRef = ref<HTMLDivElement | null>(null);
+let editorInstance: monaco.editor.IStandaloneCodeEditor | null = null;
+// 初始化编辑器
+const initEditor = () => {
+  if (!codeRef.value) return;
+
+  editorInstance = monaco.editor.create(codeRef.value, {
+    value: fileCode.value,
+    language: 'markdown',
+    theme: 'vs',
+  });
+
+  // 监听代码变化事件
+  editorInstance.onDidChangeModelContent(() => {
+    const value = editorInstance?.getValue() || '';
+    fileCode.value = value;
+  });
+
+  // 监听滚动事件
+  editorInstance.onDidScrollChange(() => {
+    if (isSyncing) return;
+    isSyncing = true;
+    if (editorInstance && viewRef.value) {
+      const scrollTop = editorInstance?.getScrollTop();
+      const scrollHeight = editorInstance?.getScrollHeight();
+      const clientHeight = editorInstance?.getDomNode()?.clientHeight || 1; // 可视区域高度
+      const scrollPercentage = scrollTop / (scrollHeight - clientHeight); // 计算滚动百分比
+      viewRef.value.scrollTop = scrollPercentage * (viewRef.value.scrollHeight - viewRef.value.clientHeight);
+    }
+    isSyncing = false;
+  });
+};
+
+// 销毁编辑器实例
+const destroyEditor = () => {
+  editorInstance?.dispose();
+};
+
+const viewRef = ref<HTMLDivElement | null>(null);
+const marked = new Marked(
+  markedHighlight({
+    emptyLangClass: 'hljs',
+    langPrefix: 'hljs language-',
+    highlight(code, lang, info) {
+      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+      return hljs.highlight(code, {language}).value;
+    },
+  })
+);
+
+const renderedMarkdown = computed(() => {
+  return marked.parse(fileCode.value);
+});
+
+const onScroll = () => {
+  if (isSyncing) return;
+
+  isSyncing = true; // 设置同步标志
+
+  if (editorInstance && viewRef.value) {
+    const scrollTop = viewRef.value.scrollTop;
+    const scrollHeight = viewRef.value.scrollHeight;
+    const clientHeight = viewRef.value.clientHeight;
+
+    const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
+    const editorScrollHeight = editorInstance.getScrollHeight();
+    const editorClientHeight = editorInstance.getDomNode()?.clientHeight || 1;
+
+    editorInstance.setScrollTop(scrollPercentage * (editorScrollHeight - editorClientHeight));
+  }
+  isSyncing = false; // 恢复同步标志
+};
+
+onMounted(() => {
+  initEditor();
+  viewRef.value?.addEventListener('scroll', onScroll);
+});
+
+onBeforeUnmount(() => {
+  destroyEditor();
+  viewRef.value?.removeEventListener('scroll', onScroll);
+});
 </script>
 <template>
   <div class="md-editor">
@@ -78,7 +163,11 @@ const fileCode = ref('');
         </template>
       </a-dropdown>
     </div>
-    <split-panel class="editor-panel" v-model:file-code="fileCode"> </split-panel>
+    <split-panel class="editor-panel"> </split-panel>
+    <!-- <div class="editor-panel">
+      <div class="code-panel" ref="codeRef"></div>
+      <div class="view-panel markdown-body" ref="viewRef" v-html="renderedMarkdown"></div>
+    </div> -->
     <a-drawer title="Markdown语法规则" placement="right" :closable="false" :open="grammarTip" @close="grammarTip = false">
       <p>Some contents...</p>
       <p>Some contents...</p>
@@ -128,6 +217,17 @@ const fileCode = ref('');
     height: calc(100% - 40px);
     display: flex;
     overflow: hidden;
+    .code-panel {
+      width: 50%;
+      height: 100%;
+      overflow: auto;
+    }
+    .view-panel {
+      width: 50%;
+      height: 100%;
+      padding: 20px;
+      overflow: auto;
+    }
   }
 }
 
