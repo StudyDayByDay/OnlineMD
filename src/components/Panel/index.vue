@@ -5,6 +5,7 @@ import {Marked} from 'marked';
 import {markedHighlight} from 'marked-highlight';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-light.css';
+import html2pdf from 'html2pdf.js';
 
 const props = defineProps({
   fileCode: {
@@ -57,6 +58,10 @@ const destroyEditor = () => {
   editorInstance?.dispose();
 };
 
+const setEditorValue = (value: string) => {
+  editorInstance?.setValue(value);
+};
+
 const viewRef = ref<HTMLDivElement | null>(null);
 const marked = new Marked(
   markedHighlight({
@@ -72,6 +77,19 @@ const marked = new Marked(
 const renderedMarkdown = computed(() => {
   return marked.parse(props.fileCode);
 });
+
+const exportPDF = () => {
+  const options = {
+    margin: 1,
+    filename: 'markdown-export.pdf',
+    image: {type: 'jpeg', quality: 0.98},
+    html2canvas: {scale: 2},
+    jsPDF: {unit: 'in', format: 'letter', orientation: 'portrait'},
+  };
+  html2pdf().set(options).from(viewRef.value).save();
+};
+
+const exportPNG = () => {};
 
 const onScroll = () => {
   if (isSyncing) return;
@@ -101,6 +119,12 @@ onMounted(() => {
 onBeforeUnmount(() => {
   destroyEditor();
   viewRef.value?.removeEventListener('scroll', onScroll);
+});
+
+defineExpose({
+  setEditorValue,
+  exportPDF,
+  exportPNG,
 });
 </script>
 

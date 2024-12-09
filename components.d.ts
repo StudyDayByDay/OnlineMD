@@ -16,6 +16,7 @@ declare module 'vue' {
     ATooltip: typeof import('ant-design-vue/es')['Tooltip']
     MDEditor: typeof import('./src/components/MDEditor/index.vue')['default']
     MDHeader: typeof import('./src/components/MDHeader/index.vue')['default']
-    SplitPanel: typeof import('./src/components/SplitPanel/index.vue')['default']
+    MDView: typeof import('./src/components/MDView/index.vue')['default']
+    Panel: typeof import('./src/components/Panel/index.vue')['default']
   }
 }
