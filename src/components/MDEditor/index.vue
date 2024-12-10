@@ -2,7 +2,7 @@
 import Panel from '@/components/Panel/index.vue';
 import MDView from '@/components/MDView/index.vue';
 import {reactive, ref, createVNode} from 'vue';
-import {UploadOutlined, QuestionCircleOutlined, EyeOutlined, CloseCircleOutlined, VerticalAlignBottomOutlined, InfoCircleFilled} from '@ant-design/icons-vue';
+import {UploadOutlined, QuestionCircleOutlined, EyeOutlined, CloseCircleOutlined, InfoCircleFilled} from '@ant-design/icons-vue';
 import {message, Modal} from 'ant-design-vue';
 
 const handleUploadFile = () => {
@@ -33,57 +33,68 @@ const handleQuestion = () => {
   grammarTip.value = true;
 };
 const handleClose = () => {
-  fileCode.value = '';
-  panelRef.value?.setEditorValue('');
-  message.success('面板清除成功');
+  if (fileCode.value) {
+    fileCode.value = '';
+    panelRef.value?.setEditorValue('');
+    message.success('面板清除成功');
+  } else {
+    message.warning('编辑区无内容，无需清除');
+  }
 };
 const handlePreview = () => {
-  previewModal.value = true;
+  if (fileCode.value) {
+    previewModal.value = true;
+  } else {
+    message.warning('编辑区无内容！');
+  }
 };
 const handleExportPDF = () => {
-  if (fileCode.value) {
-    panelRef.value?.exportPDF();
-  } else {
-    message.warning('编辑区无内容！');
-  }
+  // if (fileCode.value) {
+  //   pdfLoading.value = true;
+  //   mdViewRef.value?.exportPDF().then(() => {
+  //     pdfLoading.value = false;
+  //   });
+  // } else {
+  //   message.warning('编辑区无内容！');
+  // }
+  message.info('功能开发中，敬请期待');
 };
 const handleExportPNG = () => {
-  if (fileCode.value) {
-    panelRef.value?.exportPNG();
-  } else {
-    message.warning('编辑区无内容！');
-  }
+  // if (fileCode.value) {
+  //   imgLoading.value = true;
+  //   mdViewRef.value?.exportPNG();
+  //   imgLoading.value = false;
+  // } else {
+  //   message.warning('编辑区无内容！');
+  // }
+  message.info('功能开发中，敬请期待');
 };
 
 const images = [
+  {
+    image: QuestionCircleOutlined,
+    handleFunc: handleQuestion,
+    tip: '写法提示',
+  },
   {
     image: UploadOutlined,
     handleFunc: handleUploadFile,
     tip: '导入 Markdown 文件',
   },
   {
-    image: QuestionCircleOutlined,
-    handleFunc: handleQuestion,
-    tip: '查看 Markdown 写法提示',
-  },
-  {
     image: CloseCircleOutlined,
     handleFunc: handleClose,
-    tip: '清空 Markdown 编辑区',
+    tip: '清空编辑区',
   },
   {
     image: EyeOutlined,
     handleFunc: handlePreview,
-    tip: '预览 Markdown 文件',
-  },
-  {
-    image: VerticalAlignBottomOutlined,
-    tip: '导出文件',
+    tip: '预览和导出',
   },
 ];
 
-const frontImages = reactive(images.slice(0, 4));
-const backImages = reactive(images[4]);
+const frontImages = reactive(images.slice(0, 3));
+const backImage = reactive(images[3]);
 
 const grammarTip = ref(false);
 const previewModal = ref(false);
@@ -91,6 +102,9 @@ const invisibleInputRef = ref<HTMLInputElement | null>(null);
 
 const fileCode = ref('');
 const panelRef = ref<InstanceType<typeof Panel> | null>(null);
+const mdViewRef = ref<InstanceType<typeof MDView> | null>(null);
+const pdfLoading = ref(false);
+const imgLoading = ref(false);
 </script>
 <template>
   <div class="md-editor">
@@ -100,15 +114,9 @@ const panelRef = ref<InstanceType<typeof Panel> | null>(null);
         <component :is="item.image" @click="item.handleFunc" class="icon" />
       </a-tooltip>
       <div class="line"></div>
-      <a-dropdown placement="bottom" :arrow="{pointAtCenter: true}">
-        <component :is="backImages.image" class="icon" />
-        <template #overlay>
-          <a-menu>
-            <a-menu-item @click="handleExportPDF"> 导出为PDF </a-menu-item>
-            <a-menu-item @click="handleExportPNG"> 导出为图片 </a-menu-item>
-          </a-menu>
-        </template>
-      </a-dropdown>
+      <a-tooltip :title="backImage.tip" placement="top">
+        <component :is="backImage.image" @click="backImage.handleFunc" class="icon" style="font-size: 25px" />
+      </a-tooltip>
     </div>
     <Panel class="editor-panel" ref="panelRef" v-model:file-code="fileCode"> </Panel>
     <a-drawer title="Markdown语法规则" placement="right" size="large" :closable="false" :open="grammarTip" @close="grammarTip = false">
@@ -264,8 +272,17 @@ const panelRef = ref<InstanceType<typeof Panel> | null>(null);
         </div>
       </div>
     </a-drawer>
-    <a-modal v-model:open="previewModal" title="Markdown预览" width="70%" ok-text="确认" cancel-text="取消" @ok="previewModal = false">
-      <MDView :code="fileCode" />
+    <a-modal v-model:open="previewModal" width="70%" ok-text="确认" cancel-text="取消" @ok="previewModal = false">
+      <template #title>
+        <div class="modal-title">
+          <div>Markdown预览</div>
+          <div>
+            <a-button style="margin-right: 15px" type="primary" size="small" :loading="pdfLoading" @click="handleExportPDF">导出为PDF</a-button>
+            <a-button type="primary" size="small" :loading="imgLoading" @click="handleExportPNG">导出为图片</a-button>
+          </div>
+        </div>
+      </template>
+      <MDView ref="mdViewRef" :code="fileCode" />
     </a-modal>
     <input ref="invisibleInputRef" type="file" style="display: none" accept=".md" @change="handleFile" />
   </div>
@@ -312,6 +329,14 @@ const panelRef = ref<InstanceType<typeof Panel> | null>(null);
 .markdown-body {
   background-color: #ffffff !important; /* 强制固定为白色背景 */
   color: #000000; /* 确保文字颜色适配白色背景 */
+}
+
+.modal-title {
+  width: 100%;
+  padding-right: 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .markdown-guide {
