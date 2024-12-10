@@ -6,6 +6,7 @@ import vue from '@vitejs/plugin-vue';
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/OnlineMD/', // 必须设置为仓库名
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
