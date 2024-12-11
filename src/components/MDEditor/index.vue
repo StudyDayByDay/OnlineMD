@@ -4,6 +4,7 @@ import MDView from '@/components/MDView/index.vue';
 import {reactive, ref, createVNode} from 'vue';
 import {UploadOutlined, QuestionCircleOutlined, EyeOutlined, CloseCircleOutlined, InfoCircleFilled} from '@ant-design/icons-vue';
 import {message, Modal} from 'ant-design-vue';
+import info from './info.js';
 
 const handleUploadFile = () => {
   invisibleInputRef.value?.click();
@@ -100,7 +101,7 @@ const grammarTip = ref(false);
 const previewModal = ref(false);
 const invisibleInputRef = ref<HTMLInputElement | null>(null);
 
-const fileCode = ref('');
+const fileCode = ref(info);
 const panelRef = ref<InstanceType<typeof Panel> | null>(null);
 const mdViewRef = ref<InstanceType<typeof MDView> | null>(null);
 const pdfLoading = ref(false);
