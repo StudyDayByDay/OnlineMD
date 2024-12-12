@@ -50,15 +50,15 @@ const handlePreview = () => {
   }
 };
 const handleExportPDF = () => {
-  // if (fileCode.value) {
-  //   pdfLoading.value = true;
-  //   mdViewRef.value?.exportPDF().then(() => {
-  //     pdfLoading.value = false;
-  //   });
-  // } else {
-  //   message.warning('编辑区无内容！');
-  // }
-  message.info('功能开发中，敬请期待');
+  if (fileCode.value) {
+    pdfLoading.value = true;
+    mdViewRef.value?.exportPDF().then(() => {
+      pdfLoading.value = false;
+    });
+  } else {
+    message.warning('编辑区无内容！');
+  }
+  // message.info('功能开发中，敬请期待');
 };
 const handleExportPNG = () => {
   // if (fileCode.value) {

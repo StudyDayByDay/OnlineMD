@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import {computed, ref} from 'vue';
-import {Marked} from 'marked';
-import {markedHighlight} from 'marked-highlight';
-import hljs from 'highlight.js';
+import {ref, watch} from 'vue';
 import 'highlight.js/styles/atom-one-light.css';
-import html2canvas from 'html2canvas';
-import {jsPDF} from 'jspdf';
+import rehypeFormat from 'rehype-format';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
+import rehypeStringify from 'rehype-stringify';
+import rehypeHighlight from 'rehype-highlight';
+import remarkDirective from 'remark-directive';
+import remarkFrontmatter from 'remark-frontmatter';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import remarkParse from 'remark-parse';
+import remarkRehype from 'remark-rehype';
+import {unified} from 'unified';
+import html2pdf from 'html2pdf.js';
 
 const props = defineProps({
   code: {
@@ -15,38 +23,54 @@ const props = defineProps({
   },
 });
 
-const preViewRef = ref(null);
+const preViewRef = ref<HTMLDivElement | null>(null);
 
-const marked = new Marked(
-  markedHighlight({
-    emptyLangClass: 'hljs',
-    langPrefix: 'hljs language-',
-    highlight(code, lang, info) {
-      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-      return hljs.highlight(code, {language}).value;
-    },
-  })
+const processor = unified()
+  .use(remarkParse)
+  .use(remarkDirective)
+  .use(remarkFrontmatter)
+  .use(remarkGfm)
+  .use(remarkMath)
+  .use(remarkRehype, {allowDangerousHtml: true})
+  .use(rehypeRaw)
+  .use(rehypeFormat)
+  .use(rehypeSanitize)
+  .use(rehypeStringify)
+  .use(rehypeHighlight);
+
+watch(
+  () => props.code,
+  async (val) => {
+    const file = await processor.process(val);
+    if (preViewRef.value) {
+      preViewRef.value.innerHTML = String(file.value);
+    }
+  },
+  {immediate: true}
 );
 
-const renderedMarkdown = computed(() => {
-  return marked.parse(props.code);
-});
-
 const exportPDF = async () => {
-  // 使用 html2canvas 转换为 Canvas
-  const canvas = await html2canvas(preViewRef.value!, {
-    scale: 2, // 提高清晰度
-    useCORS: true, // 允许跨域图片
-    allowTaint: false, // 防止污染画布
-  });
-
-  const imgData = canvas.toDataURL('image/png'); // 转换为图片数据
-  const pdf = new jsPDF('p', 'mm', 'a4');
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-  pdf.save('example.pdf');
+  const options = {
+    margin: [10, 10, 10, 10], // 设置边距，顺序为 [上, 左, 下, 右]，单位为 mm
+    filename: 'document.pdf', // 导出的文件名
+    image: {type: 'jpeg', quality: 1.0}, // 图片格式和质量
+    html2canvas: {
+      scale: 3, // 提高导出清晰度（默认 1）
+      useCORS: true, // 允许跨域加载图片
+    },
+    jsPDF: {
+      unit: 'mm', // 单位（'pt', 'mm', 'cm', 'in'）
+      format: 'a4', // 页面格式（如 'a3', 'a4', 'letter'）
+      orientation: 'portrait', // 页面方向：'portrait'（竖版）或 'landscape'（横版）
+      pagebreak: {
+        mode: ['avoid-all', 'css', 'legacy'], // 避免跨页
+        before: '.page-break', // 在这些元素之前分页
+        after: '.page-break', // 在这些元素之后分页
+        avoid: 'p, h1, h2, h3, h4, h5, h6, table, pre, code, li', // 避免这些元素被分割
+      },
+    },
+  };
+  return html2pdf().from(preViewRef.value).set(options).save();
 };
 
 const exportPNG = () => {};
@@ -57,7 +81,7 @@ defineExpose({
 });
 </script>
 <template>
-  <div class="md-view" ref="preViewRef" v-html="renderedMarkdown"></div>
+  <div class="md-view" ref="preViewRef"></div>
 </template>
 
 <style lang="less" scoped>

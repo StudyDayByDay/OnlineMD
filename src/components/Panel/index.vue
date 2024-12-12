@@ -1,10 +1,20 @@
 <script lang="ts" setup>
-import {ref, computed, onMounted, onBeforeUnmount} from 'vue';
+import {ref, watch, onMounted, onBeforeUnmount} from 'vue';
 import * as monaco from 'monaco-editor';
-import {Marked} from 'marked';
-import {markedHighlight} from 'marked-highlight';
-import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-light.css';
+
+import rehypeFormat from 'rehype-format';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
+import rehypeStringify from 'rehype-stringify';
+import rehypeHighlight from 'rehype-highlight';
+import remarkDirective from 'remark-directive';
+import remarkFrontmatter from 'remark-frontmatter';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import remarkParse from 'remark-parse';
+import remarkRehype from 'remark-rehype';
+import {unified} from 'unified';
 
 const props = defineProps({
   fileCode: {
@@ -62,20 +72,29 @@ const setEditorValue = (value: string) => {
 };
 
 const viewRef = ref<HTMLDivElement | null>(null);
-const marked = new Marked(
-  markedHighlight({
-    emptyLangClass: 'hljs',
-    langPrefix: 'hljs language-',
-    highlight(code, lang, info) {
-      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-      return hljs.highlight(code, {language}).value;
-    },
-  })
-);
+const processor = unified()
+  .use(remarkParse)
+  .use(remarkDirective)
+  .use(remarkFrontmatter)
+  .use(remarkGfm)
+  .use(remarkMath)
+  .use(remarkRehype, {allowDangerousHtml: true})
+  .use(rehypeRaw)
+  .use(rehypeFormat)
+  .use(rehypeSanitize)
+  .use(rehypeStringify)
+  .use(rehypeHighlight);
 
-const renderedMarkdown = computed(() => {
-  return marked.parse(props.fileCode);
-});
+watch(
+  () => props.fileCode,
+  async (val) => {
+    const file = await processor.process(val);
+    if (viewRef.value) {
+      viewRef.value.innerHTML = String(file.value);
+    }
+  },
+  {immediate: true}
+);
 
 const onScroll = () => {
   if (isSyncing) return;
@@ -121,7 +140,7 @@ defineExpose({
     <div class="resizer"></div>
 
     <!-- 右侧面板 -->
-    <div class="panel right-panel" ref="viewRef" v-html="renderedMarkdown"></div>
+    <div class="panel right-panel" ref="viewRef"></div>
   </div>
 </template>
 
