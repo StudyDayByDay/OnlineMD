@@ -14,6 +14,7 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import {unified} from 'unified';
 import html2pdf from 'html2pdf.js';
+import {saveAs} from 'file-saver';
 
 const props = defineProps({
   code: {
@@ -73,11 +74,17 @@ const exportPDF = async () => {
   return html2pdf().from(preViewRef.value).set(options).save();
 };
 
-const exportPNG = () => {};
+const handleExportMD = () => {
+  // 创建 Blob 对象
+  const blob = new Blob([props.code], {type: 'text/markdown;charset=utf-8'});
+
+  // 保存为文件
+  saveAs(blob, 'newMD.md');
+};
 
 defineExpose({
   exportPDF,
-  exportPNG,
+  handleExportMD,
 });
 </script>
 <template>

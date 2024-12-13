@@ -4,7 +4,7 @@ import MDView from '@/components/MDView/index.vue';
 import {reactive, ref, createVNode} from 'vue';
 import {UploadOutlined, QuestionCircleOutlined, EyeOutlined, CloseCircleOutlined, InfoCircleFilled} from '@ant-design/icons-vue';
 import {message, Modal} from 'ant-design-vue';
-import info from './info.js';
+import info from './info.ts';
 
 const handleUploadFile = () => {
   invisibleInputRef.value?.click();
@@ -60,15 +60,14 @@ const handleExportPDF = () => {
   }
   // message.info('功能开发中，敬请期待');
 };
-const handleExportPNG = () => {
-  // if (fileCode.value) {
-  //   imgLoading.value = true;
-  //   mdViewRef.value?.exportPNG();
-  //   imgLoading.value = false;
-  // } else {
-  //   message.warning('编辑区无内容！');
-  // }
-  message.info('功能开发中，敬请期待');
+const handleExportMD = () => {
+  if (fileCode.value) {
+    imgLoading.value = true;
+    mdViewRef.value?.handleExportMD();
+    imgLoading.value = false;
+  } else {
+    message.warning('编辑区无内容！');
+  }
 };
 
 const images = [
@@ -120,7 +119,7 @@ const imgLoading = ref(false);
       </a-tooltip>
     </div>
     <Panel class="editor-panel" ref="panelRef" v-model:file-code="fileCode"> </Panel>
-    <a-drawer title="Markdown语法规则" placement="right" size="large" :closable="false" :open="grammarTip" @close="grammarTip = false">
+    <a-drawer title="Markdown常用语法规则" placement="right" size="large" :closable="false" :open="grammarTip" @close="grammarTip = false">
       <div class="markdown-guide">
         <!-- 标题 -->
         <div class="syntax-item">
@@ -278,8 +277,8 @@ const imgLoading = ref(false);
         <div class="modal-title">
           <div>Markdown预览</div>
           <div>
-            <a-button style="margin-right: 15px" type="primary" size="small" :loading="pdfLoading" @click="handleExportPDF">导出为PDF</a-button>
-            <a-button type="primary" size="small" :loading="imgLoading" @click="handleExportPNG">导出为图片</a-button>
+            <a-button style="margin-right: 15px" type="primary" size="small" :loading="imgLoading" @click="handleExportMD">导出为MD文件</a-button>
+            <a-button type="primary" size="small" :loading="pdfLoading" @click="handleExportPDF">导出为PDF</a-button>
           </div>
         </div>
       </template>
@@ -290,7 +289,6 @@ const imgLoading = ref(false);
 </template>
 
 <style lang="less" scoped>
-@import 'github-markdown-css';
 .md-editor {
   height: 100%;
   width: 100%;
@@ -325,11 +323,6 @@ const imgLoading = ref(false);
     display: flex;
     overflow: hidden;
   }
-}
-
-.markdown-body {
-  background-color: #ffffff !important; /* 强制固定为白色背景 */
-  color: #000000; /* 确保文字颜色适配白色背景 */
 }
 
 .modal-title {

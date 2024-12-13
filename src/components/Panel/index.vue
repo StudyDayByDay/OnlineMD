@@ -144,7 +144,7 @@ defineExpose({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="less">
 /* 分屏容器 */
 .split-container {
   display: flex;

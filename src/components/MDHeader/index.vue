@@ -4,17 +4,17 @@ import github from '@/assets/images/github.svg';
 </script>
 <template>
   <div class="md-header">
-    <a class="left" href="#">
+    <div class="left" href="#">
       <img :src="markdown" alt="在线Markdown编辑器" />
       <strong>onlineMD - 在线 Markdown 编辑器</strong>
-    </a>
+    </div>
     <div class="flex-item-1"></div>
     <div class="right">
       <a-tooltip placement="bottom">
         <template #title>
-          <span>作者 github</span>
+          <span>前往项目github</span>
         </template>
-        <a href="https://github.com/StudyDayByDay" target="_blank">
+        <a href="https://github.com/StudyDayByDay/OnlineMD" target="_blank">
           <img :src="github" alt="github" />
         </a>
       </a-tooltip>
